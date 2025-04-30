@@ -287,6 +287,11 @@ function PureAttachmentsButton({
   status: UseChatHelpers['status'];
 }) {
   const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <Button
@@ -299,7 +304,11 @@ function PureAttachmentsButton({
       disabled={status !== 'ready'}
       variant="ghost"
     >
-      {theme === 'dark' ? <BotLightIcon /> : <BotDarkIcon />}
+      {mounted ? (
+        theme === 'dark' ? <BotLightIcon /> : <BotDarkIcon />
+      ) : (
+        <div style={{ width: 24, height: 24 }} />
+      )}
     </Button>
   );
 }

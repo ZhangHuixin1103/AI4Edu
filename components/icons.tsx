@@ -1,12 +1,10 @@
 import Image from 'next/image';
 
-const basePath = 'https://ai-math-ta.vercel.app';
-
 export const BotDarkIcon = () => {
   return (
     <div>
       <Image
-        src={`${basePath}/icons/robot-dark.png`}
+        src={`/icons/robot-dark.png`}
         alt={'Bot'}
         width={24}
         height={24}
@@ -21,7 +19,7 @@ export const BotLightIcon = () => {
   return (
     <div>
       <Image
-        src={`${basePath}/icons/robot-light.png`}
+        src={`/icons/robot-light.png`}
         alt={'Bot'}
         width={24}
         height={24}

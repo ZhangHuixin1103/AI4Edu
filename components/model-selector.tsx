@@ -31,17 +31,17 @@ export function ModelSelector({
 
   console.log('session.user:', session?.user);
   const userType = session.user.type || 'defaultType';
-  console.log('entitlementsByUserType[userType]:', entitlementsByUserType[userType]);
-  const entitlement = entitlementsByUserType[userType];
-  if (!entitlement) {
-    console.error(`Invalid userType: ${userType}`);
-    return null;
-  }
-  const { availableChatModelIds } = entitlement;
-
-  const availableChatModels = chatModels.filter((chatModel) =>
-    availableChatModelIds.includes(chatModel.id),
+  console.log(
+    'entitlementsByUserType[userType]:',
+    entitlementsByUserType[userType],
   );
+  const entitlement = entitlementsByUserType[userType];
+
+  const availableChatModels = entitlement
+    ? chatModels.filter((chatModel) =>
+        entitlement.availableChatModelIds.includes(chatModel.id),
+      )
+    : [];
 
   const selectedChatModel = useMemo(
     () =>
