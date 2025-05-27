@@ -188,7 +188,11 @@ export async function POST(request: Request) {
           sendReasoning: true,
         });
       },
-      onError: () => {
+      onError: (error) => {
+        console.error('Error during streaming:', error);
+        if (error instanceof Error) {
+          console.error('Error message:', error.message);
+        }
         return 'Oops, an error occurred!';
       },
     });
