@@ -1,15 +1,16 @@
+import { appendResponseMessages, type UIMessage } from 'ai';
 import { config } from 'dotenv';
+import { inArray } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import {
   chat,
   message,
+  type MessageDeprecated,
   messageDeprecated,
   vote,
   voteDeprecated,
 } from '../schema';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { inArray } from 'drizzle-orm';
-import { appendResponseMessages, UIMessage } from 'ai';
 
 config({
   path: '.env.local',
@@ -22,8 +23,8 @@ if (!process.env.POSTGRES_URL) {
 const client = postgres(process.env.POSTGRES_URL);
 const db = drizzle(client);
 
-const BATCH_SIZE = 50; // Process 10 chats at a time
-const INSERT_BATCH_SIZE = 100; // Insert 100 messages at a time
+const BATCH_SIZE = 100; // Process 100 chats at a time
+const INSERT_BATCH_SIZE = 1000; // Insert 1000 messages at a time
 
 type NewMessageInsert = {
   id: string;
@@ -40,7 +41,58 @@ type NewVoteInsert = {
   isUpvoted: boolean;
 };
 
-async function createNewTable() {
+interface MessageDeprecatedContentPart {
+  type: string;
+  content: unknown;
+}
+
+function getMessageRank(message: MessageDeprecated): number {
+  if (
+    message.role === 'assistant' &&
+    (message.content as MessageDeprecatedContentPart[]).some(
+      (contentPart) => contentPart.type === 'tool-call',
+    )
+  ) {
+    return 0;
+  }
+
+  if (
+    message.role === 'tool' &&
+    (message.content as MessageDeprecatedContentPart[]).some(
+      (contentPart) => contentPart.type === 'tool-result',
+    )
+  ) {
+    return 1;
+  }
+
+  if (message.role === 'assistant') {
+    return 2;
+  }
+
+  return 3;
+}
+
+function dedupeParts<T extends { type: string; [k: string]: any }>(
+  parts: T[],
+): T[] {
+  const seen = new Set<string>();
+  return parts.filter((p) => {
+    const key = `${p.type}|${JSON.stringify(p.content ?? p)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function sanitizeParts<T extends { type: string; [k: string]: any }>(
+  parts: T[],
+): T[] {
+  return parts.filter(
+    (part) => !(part.type === 'reasoning' && part.reasoning === 'undefined'),
+  );
+}
+
+async function migrateMessages() {
   const chats = await db.select().from(chat);
   let processedCount = 0;
 
@@ -70,7 +122,15 @@ async function createNewTable() {
       console.info(`Processed ${processedCount}/${chats.length} chats`);
 
       // Filter messages and votes for this specific chat
-      const messages = allMessages.filter((msg) => msg.chatId === chat.id);
+      const messages = allMessages
+        .filter((message) => message.chatId === chat.id)
+        .sort((a, b) => {
+          const differenceInTime =
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          if (differenceInTime !== 0) return differenceInTime;
+
+          return getMessageRank(a) - getMessageRank(b);
+        });
       const votes = allVotes.filter((v) => v.chatId === chat.id);
 
       // Group messages into sections
@@ -121,10 +181,14 @@ async function createNewTable() {
                   attachments: [],
                 } as NewMessageInsert;
               } else if (message.role === 'assistant') {
+                const cleanParts = sanitizeParts(
+                  dedupeParts(message.parts || []),
+                );
+
                 return {
                   id: message.id,
                   chatId: chat.id,
-                  parts: message.parts || [],
+                  parts: cleanParts,
                   role: message.role,
                   createdAt: message.createdAt,
                   attachments: [],
@@ -185,7 +249,7 @@ async function createNewTable() {
   console.info(`Migration completed: ${processedCount} chats processed`);
 }
 
-createNewTable()
+migrateMessages()
   .then(() => {
     console.info('Script completed successfully');
     process.exit(0);

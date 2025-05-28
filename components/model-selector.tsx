@@ -10,12 +10,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import { chatModels } from '@/lib/ai/models';
 import { cn } from '@/lib/utils';
-
-import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
-import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import type { Session } from 'next-auth';
+import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
 
 export function ModelSelector({
   session,

@@ -4,9 +4,9 @@ import { sheetDocumentHandler } from '@/artifacts/sheet/server';
 import { textDocumentHandler } from '@/artifacts/text/server';
 import { ArtifactKind } from '@/components/artifact';
 import { DataStreamWriter } from 'ai';
-import { Document } from '../db/schema';
-import { saveDocument } from '../db/queries';
 import { Session } from 'next-auth';
+import { saveDocument } from '../db/queries';
+import { Document } from '../db/schema';
 
 export interface SaveDocumentProps {
   id: string;

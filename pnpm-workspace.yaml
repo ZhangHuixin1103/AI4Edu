@@ -1,0 +1,8 @@
+ignoredBuiltDependencies:
+  - '@prisma/client'
+  - bufferutil
+  - esbuild
+  - sharp
+  - unrs-resolver
+onlyBuiltDependencies:
+  - '@biomejs/biome'

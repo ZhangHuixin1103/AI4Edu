@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import {
   type APIRequestContext,
   type Browser,
@@ -8,8 +6,10 @@ import {
   type Page,
 } from '@playwright/test';
 import { generateId } from 'ai';
-import { ChatPage } from './pages/chat';
 import { getUnixTime } from 'date-fns';
+import fs from 'node:fs';
+import path from 'node:path';
+import { ChatPage } from './pages/chat';
 
 export type UserContext = {
   context: BrowserContext;

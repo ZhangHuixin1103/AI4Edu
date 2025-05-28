@@ -1,7 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,15 +7,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { cn } from '@/lib/utils';
-
+import type { ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import {
   CheckCircleFillIcon,
   ChevronDownIcon,
   GlobeIcon,
   LockIcon,
 } from './icons';
-import { useChatVisibility } from '@/hooks/use-chat-visibility';
 
 export type VisibilityType = 'private' | 'public';
 
@@ -53,7 +52,7 @@ export function VisibilitySelector({
 
   const { visibilityType, setVisibilityType } = useChatVisibility({
     chatId,
-    initialVisibility: selectedVisibilityType,
+    initialVisibilityType: selectedVisibilityType,
   });
 
   const selectedVisibility = useMemo(
@@ -71,6 +70,7 @@ export function VisibilitySelector({
         )}
       >
         <Button
+          data-testid="visibility-selector"
           variant="outline"
           className="hidden md:flex md:px-2 md:h-[34px]"
         >
@@ -83,6 +83,7 @@ export function VisibilitySelector({
       <DropdownMenuContent align="start" className="min-w-[300px]">
         {visibilities.map((visibility) => (
           <DropdownMenuItem
+            data-testid={`visibility-selector-item-${visibility.id}`}
             key={visibility.id}
             onSelect={() => {
               setVisibilityType(visibility.id);

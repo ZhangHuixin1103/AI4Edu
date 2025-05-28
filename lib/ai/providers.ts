@@ -1,11 +1,11 @@
+import { deepinfra } from "@ai-sdk/deepinfra";
+import { google } from '@ai-sdk/google';
+import { xai } from '@ai-sdk/xai';
 import {
   customProvider,
   extractReasoningMiddleware,
   wrapLanguageModel,
 } from 'ai';
-import { deepinfra } from "@ai-sdk/deepinfra";
-import { google } from '@ai-sdk/google';
-import { xai } from '@ai-sdk/xai';
 import { isTestEnvironment } from '../constants';
 import {
   artifactModel,

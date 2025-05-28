@@ -2,9 +2,9 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { Chat } from '@/components/chat';
+import { DataStreamHandler } from '@/components/data-stream-handler';
 import { defaultModel } from '@/lib/ai/models';
 import { generateUUID } from '@/lib/utils';
-import { DataStreamHandler } from '@/components/data-stream-handler';
 
 import { auth } from '../(auth)/auth';
 
@@ -27,10 +27,11 @@ export default async function Page() {
           key={id}
           id={id}
           initialMessages={[]}
-          selectedChatModel={defaultModel}
-          selectedVisibilityType="private"
+          initialChatModel={defaultModel}
+          initialVisibilityType="private"
           isReadonly={false}
           session={session}
+          autoResume={false}
         />
         <DataStreamHandler id={id} />
       </>
@@ -43,10 +44,11 @@ export default async function Page() {
         key={id}
         id={id}
         initialMessages={[]}
-        selectedChatModel={modelIdFromCookie.value}
-        selectedVisibilityType="public"
+        initialChatModel={modelIdFromCookie.value}
+        initialVisibilityType="public"
         isReadonly={false}
         session={session}
+        autoResume={false}
       />
       <DataStreamHandler id={id} />
     </>

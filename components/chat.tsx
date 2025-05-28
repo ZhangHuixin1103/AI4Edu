@@ -1,39 +1,49 @@
 'use client';
 
-import type { Attachment, UIMessage } from 'ai';
-import { useChat } from '@ai-sdk/react';
-import { useEffect, useState } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
-import type { Vote } from '@/lib/db/schema';
-import { fetcher, generateUUID } from '@/lib/utils';
-import { Artifact } from './artifact';
-import { MultimodalInput } from './multimodal-input';
-import { Messages } from './messages';
-import type { VisibilityType } from './visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
-import { unstable_serialize } from 'swr/infinite';
-import { getChatHistoryPaginationKey } from './sidebar-history';
-import { toast } from './toast';
+import { useAutoResume } from '@/hooks/use-auto-resume';
+import { useChatVisibility } from '@/hooks/use-chat-visibility';
+import type { Vote } from '@/lib/db/schema';
+import { ChatSDKError } from '@/lib/errors';
+import { fetcher, fetchWithErrorHandlers, generateUUID } from '@/lib/utils';
+import { useChat } from '@ai-sdk/react';
+import type { Attachment, UIMessage } from 'ai';
 import type { Session } from 'next-auth';
 import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import useSWR, { useSWRConfig } from 'swr';
+import { unstable_serialize } from 'swr/infinite';
+import { Artifact } from './artifact';
+import { Messages } from './messages';
+import { MultimodalInput } from './multimodal-input';
+import { getChatHistoryPaginationKey } from './sidebar-history';
+import { toast } from './toast';
+import type { VisibilityType } from './visibility-selector';
 
 export function Chat({
   id,
   initialMessages,
-  selectedChatModel,
-  selectedVisibilityType,
+  initialChatModel,
+  initialVisibilityType,
   isReadonly,
   session,
+  autoResume,
 }: {
   id: string;
   initialMessages: Array<UIMessage>;
-  selectedChatModel: string;
-  selectedVisibilityType: VisibilityType;
+  initialChatModel: string;
+  initialVisibilityType: VisibilityType;
   isReadonly: boolean;
   session: Session;
+  autoResume: boolean;
 }) {
   const { mutate } = useSWRConfig();
+
+  const { visibilityType } = useChatVisibility({
+    chatId: id,
+    initialVisibilityType,
+  });
 
   const {
     messages,
@@ -45,25 +55,31 @@ export function Chat({
     status,
     stop,
     reload,
+    experimental_resume,
+    data,
   } = useChat({
     id,
     initialMessages,
     experimental_throttle: 100,
     sendExtraMessageFields: true,
     generateId: generateUUID,
+    fetch: fetchWithErrorHandlers,
     experimental_prepareRequestBody: (body) => ({
       id,
       message: body.messages.at(-1),
-      selectedChatModel,
+      selectedChatModel: initialChatModel,
+      selectedVisibilityType: visibilityType,
     }),
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
     onError: (error) => {
-      toast({
-        type: 'error',
-        description: error.message,
-      });
+      if (error instanceof ChatSDKError) {
+        toast({
+          type: 'error',
+          description: error.message,
+        });
+      }
     },
   });
 
@@ -92,13 +108,21 @@ export function Chat({
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
 
+  useAutoResume({
+    autoResume,
+    initialMessages,
+    experimental_resume,
+    data,
+    setMessages,
+  });
+
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background">
         <ChatHeader
           chatId={id}
-          selectedModelId={selectedChatModel}
-          selectedVisibilityType={selectedVisibilityType}
+          selectedModelId={initialChatModel}
+          selectedVisibilityType={initialVisibilityType}
           isReadonly={isReadonly}
           session={session}
         />
@@ -128,6 +152,7 @@ export function Chat({
               messages={messages}
               setMessages={setMessages}
               append={append}
+              selectedVisibilityType={visibilityType}
             />
           )}
         </form>
@@ -148,6 +173,7 @@ export function Chat({
         reload={reload}
         votes={votes}
         isReadonly={isReadonly}
+        selectedVisibilityType={visibilityType}
       />
     </>
   );
