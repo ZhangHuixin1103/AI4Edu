@@ -21,7 +21,7 @@ import {
 import type { Chat } from '@/lib/db/schema';
 import { ChatSDKError } from '@/lib/errors';
 import { generateUUID, getTrailingMessageId } from '@/lib/utils';
-import { geolocation } from '@vercel/functions';
+// import { geolocation } from '@vercel/functions';
 import {
   appendClientMessage,
   appendResponseMessages,
@@ -30,36 +30,37 @@ import {
   streamText,
 } from 'ai';
 import { differenceInSeconds } from 'date-fns';
-import { after } from 'next/server';
-import {
-  createResumableStreamContext,
-  type ResumableStreamContext,
-} from 'resumable-stream';
+// import { after } from 'next/server';
+// import {
+//   createResumableStreamContext,
+//   type ResumableStreamContext,
+// } from 'resumable-stream';
 import { generateTitleFromUserMessage } from '../../actions';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 
 export const maxDuration = 60;
 
-let globalStreamContext: ResumableStreamContext | null = null;
+// let globalStreamContext: ResumableStreamContext | null = null;
 
 function getStreamContext() {
-  if (!globalStreamContext) {
-    try {
-      globalStreamContext = createResumableStreamContext({
-        waitUntil: after,
-      });
-    } catch (error: any) {
-      if (error.message.includes('REDIS_URL')) {
-        console.log(
-          ' > Resumable streams are disabled due to missing REDIS_URL',
-        );
-      } else {
-        console.error(error);
-      }
-    }
-  }
+  // if (!globalStreamContext) {
+  //   try {
+  //     globalStreamContext = createResumableStreamContext({
+  //       waitUntil: after,
+  //     });
+  //   } catch (error: any) {
+  //     if (error.message.includes('REDIS_URL')) {
+  //       console.log(
+  //         ' > Resumable streams are disabled due to missing REDIS_URL',
+  //       );
+  //     } else {
+  //       console.error(error);
+  //     }
+  //   }
+  // }
 
-  return globalStreamContext;
+  // return globalStreamContext;
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -119,14 +120,14 @@ export async function POST(request: Request) {
       message,
     });
 
-    const { longitude, latitude, city, country } = geolocation(request);
+    // const { longitude, latitude, city, country } = geolocation(request);
 
-    const requestHints: RequestHints = {
-      longitude,
-      latitude,
-      city,
-      country,
-    };
+    // const requestHints: RequestHints = {
+    //   longitude,
+    //   latitude,
+    //   city,
+    //   country,
+    // };
 
     await saveMessages({
       messages: [
@@ -148,7 +149,8 @@ export async function POST(request: Request) {
       execute: (dataStream) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          // system: systemPrompt({ selectedChatModel, requestHints }),
+          system: systemPrompt({ selectedChatModel }),
           messages,
           maxSteps: 5,
           experimental_activeTools:
@@ -235,13 +237,14 @@ export async function POST(request: Request) {
 
     const streamContext = getStreamContext();
 
-    if (streamContext) {
-      return new Response(
-        await streamContext.resumableStream(streamId, () => stream),
-      );
-    } else {
-      return new Response(stream);
-    }
+    // if (streamContext) {
+    //   return new Response(
+    //     await streamContext.resumableStream(streamId, () => stream),
+    //   );
+    // } else {
+    //   return new Response(stream);
+    // }
+    return new Response(stream);
   } catch (error) {
     if (error instanceof ChatSDKError) {
       return error.toResponse();
@@ -304,46 +307,47 @@ export async function GET(request: Request) {
     execute: () => { },
   });
 
-  const stream = await streamContext.resumableStream(
-    recentStreamId,
-    () => emptyDataStream,
-  );
+  // const stream = await streamContext.resumableStream(
+  //   recentStreamId,
+  //   () => emptyDataStream,
+  // );
 
   /*
    * For when the generation is streaming during SSR
    * but the resumable stream has concluded at this point.
    */
-  if (!stream) {
-    const messages = await getMessagesByChatId({ id: chatId });
-    const mostRecentMessage = messages.at(-1);
+  // if (!stream) {
+  //   const messages = await getMessagesByChatId({ id: chatId });
+  //   const mostRecentMessage = messages.at(-1);
 
-    if (!mostRecentMessage) {
-      return new Response(emptyDataStream, { status: 200 });
-    }
+  //   if (!mostRecentMessage) {
+  //     return new Response(emptyDataStream, { status: 200 });
+  //   }
 
-    if (mostRecentMessage.role !== 'assistant') {
-      return new Response(emptyDataStream, { status: 200 });
-    }
+  //   if (mostRecentMessage.role !== 'assistant') {
+  //     return new Response(emptyDataStream, { status: 200 });
+  //   }
 
-    const messageCreatedAt = new Date(mostRecentMessage.createdAt);
+  //   const messageCreatedAt = new Date(mostRecentMessage.createdAt);
 
-    if (differenceInSeconds(resumeRequestedAt, messageCreatedAt) > 15) {
-      return new Response(emptyDataStream, { status: 200 });
-    }
+  //   if (differenceInSeconds(resumeRequestedAt, messageCreatedAt) > 15) {
+  //     return new Response(emptyDataStream, { status: 200 });
+  //   }
 
-    const restoredStream = createDataStream({
-      execute: (buffer) => {
-        buffer.writeData({
-          type: 'append-message',
-          message: JSON.stringify(mostRecentMessage),
-        });
-      },
-    });
+  //   const restoredStream = createDataStream({
+  //     execute: (buffer) => {
+  //       buffer.writeData({
+  //         type: 'append-message',
+  //         message: JSON.stringify(mostRecentMessage),
+  //       });
+  //     },
+  //   });
 
-    return new Response(restoredStream, { status: 200 });
-  }
+  //   return new Response(restoredStream, { status: 200 });
+  // }
 
-  return new Response(stream, { status: 200 });
+  // return new Response(stream, { status: 200 });
+  return new ChatSDKError('not_found:stream').toResponse();
 }
 
 export async function DELETE(request: Request) {

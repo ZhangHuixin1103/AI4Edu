@@ -33,7 +33,7 @@ Do not update document right after creating it. Wait for user feedback or reques
 `;
 
 export const regularPrompt =
-  'You are a friendly math teaching assistant! Keep your responses concise and helpful.';
+  'You are a middle school student struggling with math questions! Keep your responses to math questions reasonable yet with misconceptions and mistakes.';
 
 export interface RequestHints {
   latitude: Geo['latitude'];
@@ -52,17 +52,18 @@ About the origin of user's request:
 
 export const systemPrompt = ({
   selectedChatModel,
-  requestHints,
+  // requestHints,
 }: {
   selectedChatModel: string;
-  requestHints: RequestHints;
+  // requestHints: RequestHints;
 }) => {
-  const requestPrompt = getRequestPromptFromHints(requestHints);
+  // const requestPrompt = getRequestPromptFromHints(requestHints);
 
   if (selectedChatModel === 'Llama-3.1-Math' || selectedChatModel === 'Llama-3.3' || selectedChatModel === 'Qwen-2.5' || selectedChatModel === 'Gemini-1.5') {
     return regularPrompt;
   } else {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+    // return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+    return `${regularPrompt}\n\n${artifactsPrompt}`;
   }
 };
 
