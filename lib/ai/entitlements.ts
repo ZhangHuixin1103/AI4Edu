@@ -9,7 +9,7 @@ interface Entitlements {
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
   defaultType: {
     maxMessagesPerDay: 10,
-    availableChatModelIds: ['Llama-3.3'],
+    availableChatModelIds: ['Llama-3.1-Math', 'Llama-3.3'],
   },
 
   /*
@@ -17,7 +17,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
   guest: {
     maxMessagesPerDay: 20,
-    availableChatModelIds: ['Qwen-2.5', 'Llama-3.3'],
+    availableChatModelIds: ['Llama-3.1-Math', 'Qwen-2.5', 'Llama-3.3'],
   },
 
   /*
@@ -25,7 +25,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
   regular: {
     maxMessagesPerDay: 100,
-    availableChatModelIds: ['Qwen-2.5', 'Llama-3.3', 'Gemini-1.5'],
+    availableChatModelIds: ['Llama-3.1-Math', 'Qwen-2.5', 'Llama-3.3', 'Gemini-1.5'],
   },
 
   /*

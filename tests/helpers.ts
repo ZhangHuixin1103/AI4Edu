@@ -24,7 +24,7 @@ export async function createAuthenticatedContext({
 }: {
   browser: Browser;
   name: string;
-  chatModel?: 'Qwen-2.5' | 'Llama-3.3';
+  chatModel?: 'Qwen-2.5' | 'Llama-3.3' | 'Llama-3.1-Math';
 }): Promise<UserContext> {
   const directory = path.join(__dirname, '../playwright/.sessions');
 

@@ -154,8 +154,7 @@ export async function POST(request: Request) {
           experimental_activeTools:
             selectedChatModel === 'Llama-3.3' ||
               selectedChatModel === 'Qwen-2.5' ||
-              selectedChatModel === 'Gemini-1.5' ||
-              selectedChatModel === 'Llama-3.1-Math'
+              selectedChatModel === 'Gemini-1.5'
               ? []
               : [
                 'mathTool',

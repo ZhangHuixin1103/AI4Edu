@@ -59,7 +59,7 @@ export const systemPrompt = ({
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
 
-  if (selectedChatModel === 'Llama-3.3' || selectedChatModel === 'Qwen-2.5' || selectedChatModel === 'Gemini-1.5') {
+  if (selectedChatModel === 'Llama-3.1-Math' || selectedChatModel === 'Llama-3.3' || selectedChatModel === 'Qwen-2.5' || selectedChatModel === 'Gemini-1.5') {
     return regularPrompt;
   } else {
     return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;

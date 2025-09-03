@@ -8,6 +8,11 @@ export interface ChatModel {
 
 export const chatModels: Array<ChatModel> = [
   {
+    id: 'Llama-3.1-Math',
+    name: 'Ours',
+    description: 'Finetuned chat model',
+  },
+  {
     id: 'Llama-3.3',
     name: 'Llama',
     description: 'Uses advanced reasoning',

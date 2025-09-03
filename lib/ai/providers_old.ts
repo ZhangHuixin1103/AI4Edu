@@ -1,7 +1,6 @@
 import { deepinfra } from "@ai-sdk/deepinfra";
 import { google } from '@ai-sdk/google';
 import { xai } from '@ai-sdk/xai';
-import { ollama } from 'ollama-ai-provider-v2';
 import {
   customProvider,
   extractReasoningMiddleware,
@@ -29,12 +28,6 @@ const languageModels = {
     }),
     model: google("gemini-1.5-pro"),
   }),
-  "Llama-3.1-Math": wrapLanguageModel({
-    middleware: extractReasoningMiddleware({
-      tagName: 'think',
-    }),
-    model: ollama('llama-math'),
-  }),
   'title-model': xai('grok-2-1212'),
   'artifact-model': xai('grok-2-1212'),
 };
@@ -45,7 +38,6 @@ export const myProvider = isTestEnvironment
       'Llama-3.3': reasoningModel,
       'Qwen-2.5': chatModel,
       'Gemini-1.5': reasoningModel,
-      'Llama-3.1-Math': chatModel,
       'title-model': titleModel,
       'artifact-model': artifactModel,
     },
@@ -61,4 +53,4 @@ export type modelID = keyof typeof languageModels;
 
 export const MODELS = Object.keys(languageModels);
 
-export const defaultModel: modelID = "Llama-3.1-Math";
+export const defaultModel: modelID = "Llama-3.3";
