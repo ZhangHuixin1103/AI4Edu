@@ -22,20 +22,17 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
   console.log('Corrected URL:', correctedUrl);
   console.log('Request Body:', init?.body);
 
-  // Make the request
   const response = await fetch(correctedUrl, init);
   if (!response.ok) {
     console.error('Fetch error:', await response.text());
     return response;
   }
 
-  // If not streaming, return the response as-is
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/event-stream')) {
     return response;
   }
 
-  // Handle SSE stream
   if (!response.body) {
     console.error('Response body is null');
     return new Response('No response body', { status: 500 });
@@ -44,16 +41,14 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
   const reader = response.body.getReader();
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
+  let closed = false;
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
         while (true) {
           const { done, value } = await reader.read();
-          if (done) {
-            controller.close();
-            break;
-          }
+          if (done) break;
           buffer += decoder.decode(value, { stream: true });
 
           // Split on \n\n for complete SSE events
@@ -61,26 +56,66 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
           buffer = events.pop() || ''; // Keep incomplete event
 
           for (const event of events) {
+            if (closed) break;
             const lines = event.split('\n').filter(line => line.startsWith('data: '));
             for (const line of lines) {
-              const jsonText = line.replace(/^data:\s*/, '');
-              if (jsonText === '[DONE]') {
-                controller.close();
-                break;
-              }
+              const jsonText = line.replace(/^data:\s*/, '').trim();
               if (!jsonText) continue;
+              if (jsonText === '[DONE]') {
+                if (!closed) {
+                  controller.close();
+                  closed = true;
+                }
+                continue; // Process remaining lines in the event
+              }
               try {
                 const chunk = JSON.parse(jsonText);
-                controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
+                if (!closed) {
+                  controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
+                }
               } catch (err) {
-                console.error('JSON parse error:', jsonText, err);
+                console.warn('JSON parse error:', jsonText, err);
               }
             }
           }
         }
+
+        // Process residual buffer
+        if (buffer.trim() && !closed) {
+          const events = buffer.split('\n\n');
+          for (const event of events) {
+            const lines = event.split('\n').filter(line => line.startsWith('data: '));
+            for (const line of lines) {
+              const jsonText = line.replace(/^data:\s*/, '').trim();
+              if (!jsonText) continue;
+              if (jsonText === '[DONE]') {
+                if (!closed) {
+                  controller.close();
+                  closed = true;
+                }
+                continue;
+              }
+              try {
+                const chunk = JSON.parse(jsonText);
+                if (!closed) {
+                  controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
+                }
+              } catch (err) {
+                console.warn('JSON parse error in residual buffer:', jsonText, err);
+              }
+            }
+          }
+        }
+
+        if (!closed) {
+          controller.close();
+          closed = true;
+        }
       } catch (err) {
-        console.error('Stream processing error:', err);
-        controller.error(err);
+        if (!closed) {
+          console.error('Stream processing error:', err);
+          controller.error(err);
+        }
       } finally {
         reader.releaseLock();
       }
