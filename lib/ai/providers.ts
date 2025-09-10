@@ -16,7 +16,7 @@ import {
 } from './models.test';
 
 const ollamaProvider = createOllama({
-  baseURL: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
+  baseURL: process.env.OLLAMA_BASE_URL,
 });
 
 const languageModels = {
