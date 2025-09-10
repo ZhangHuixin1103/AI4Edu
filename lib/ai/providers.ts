@@ -1,7 +1,7 @@
 import { deepinfra } from "@ai-sdk/deepinfra";
 import { google } from '@ai-sdk/google';
 import { xai } from '@ai-sdk/xai';
-import { ollama } from 'ollama-ai-provider-v2';
+import { createOllama } from 'ollama-ai-provider-v2';
 import {
   customProvider,
   extractReasoningMiddleware,
@@ -14,6 +14,10 @@ import {
   reasoningModel,
   titleModel,
 } from './models.test';
+
+const ollamaProvider = createOllama({
+  baseURL: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434',
+});
 
 const languageModels = {
   "Llama-3.3": wrapLanguageModel({
@@ -33,10 +37,7 @@ const languageModels = {
     middleware: extractReasoningMiddleware({
       tagName: "think",
     }),
-    // @ts-expect-error runtime supports this
-    model: ollama("llama-math", {
-      baseUrl: process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434",
-    }),
+    model: ollamaProvider("llama-math"),
   }),
   'title-model': deepinfra("Qwen/Qwen2.5-72B-Instruct"),
   'artifact-model': deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
