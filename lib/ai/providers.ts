@@ -21,11 +21,75 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
   console.log('Original URL:', urlString);
   console.log('Corrected URL:', correctedUrl);
   console.log('Request Body:', init?.body);
+
+  // Make the request
   const response = await fetch(correctedUrl, init);
   if (!response.ok) {
     console.error('Fetch error:', await response.text());
+    return response;
   }
-  return response;
+
+  // If not streaming, return the response as-is
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/event-stream')) {
+    return response;
+  }
+
+  // Handle SSE stream
+  if (!response.body) {
+    console.error('Response body is null');
+    return new Response('No response body', { status: 500 });
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            controller.close();
+            break;
+          }
+          buffer += decoder.decode(value, { stream: true });
+
+          // Split on \n\n for complete SSE events
+          const events = buffer.split('\n\n');
+          buffer = events.pop() || ''; // Keep incomplete event
+
+          for (const event of events) {
+            const lines = event.split('\n').filter(line => line.startsWith('data: '));
+            for (const line of lines) {
+              const jsonText = line.replace(/^data:\s*/, '');
+              if (jsonText === '[DONE]') {
+                controller.close();
+                break;
+              }
+              if (!jsonText) continue;
+              try {
+                const chunk = JSON.parse(jsonText);
+                controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
+              } catch (err) {
+                console.error('JSON parse error:', jsonText, err);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Stream processing error:', err);
+        controller.error(err);
+      } finally {
+        reader.releaseLock();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'application/json' },
+  });
 };
 
 const ollamaProvider = createOllama({
