@@ -17,9 +17,15 @@ import {
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const urlString = typeof input === 'string' ? input : input.toString();
-  const correctedUrl = urlString.replace(/\/chat$/, '/chat/completions');
-  console.log('Request URL:', correctedUrl); // For testing purposes
-  return fetch(correctedUrl, init);
+  const correctedUrl = urlString.replace(/\/chat(\/|$)/, '/v1/chat/completions$1');
+  console.log('Original URL:', urlString);
+  console.log('Corrected URL:', correctedUrl);
+  console.log('Request Body:', init?.body);
+  const response = await fetch(correctedUrl, init);
+  if (!response.ok) {
+    console.error('Fetch error:', await response.text());
+  }
+  return response;
 };
 
 const ollamaProvider = createOllama({
