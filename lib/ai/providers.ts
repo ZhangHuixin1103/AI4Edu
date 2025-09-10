@@ -15,8 +15,17 @@ import {
   titleModel,
 } from './models.test';
 
+const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const urlString = typeof input === 'string' ? input : input.toString();
+  const correctedUrl = urlString.replace(/\/chat$/, '/chat/completions');
+  console.log('Request URL:', correctedUrl); // For testing purposes
+  return fetch(correctedUrl, init);
+};
+
 const ollamaProvider = createOllama({
-  baseURL: process.env.OLLAMA_BASE_URL,
+  baseURL: process.env.OLLAMA_BASE_URL, // https://tamu-ta.tamu.ngrok.app/v1
+  compatibility: "strict",
+  fetch: customFetch,
 });
 
 const languageModels = {
