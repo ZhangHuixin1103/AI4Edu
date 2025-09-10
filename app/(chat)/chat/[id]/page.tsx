@@ -51,7 +51,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   }
 
   const cookieStore = await cookies();
-  const chatModelFromCookie = cookieStore.get('Llama-3.3');
+  const chatModelFromCookie = cookieStore.get('Llama-3.1-Math');
 
   if (!chatModelFromCookie) {
     return (

@@ -18,7 +18,7 @@ export default async function Page() {
   const id = generateUUID();
 
   const cookieStore = await cookies();
-  const modelIdFromCookie = cookieStore.get('Llama-3.3');
+  const modelIdFromCookie = cookieStore.get('Llama-3.1-Math');
 
   if (!modelIdFromCookie) {
     return (

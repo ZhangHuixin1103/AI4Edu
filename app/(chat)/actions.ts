@@ -12,7 +12,7 @@ import { cookies } from 'next/headers';
 
 export async function saveChatModelAsCookie(model: string) {
   const cookieStore = await cookies();
-  cookieStore.set('Llama-3.3', model);
+  cookieStore.set('Llama-3.1-Math', model);
 }
 
 export async function generateTitleFromUserMessage({

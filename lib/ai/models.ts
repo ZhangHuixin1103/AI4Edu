@@ -1,4 +1,4 @@
-export const defaultModel: string = "Llama-3.3";
+export const defaultModel: string = "Llama-3.1-Math";
 
 export interface ChatModel {
   id: string;

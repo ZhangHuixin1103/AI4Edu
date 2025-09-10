@@ -53,7 +53,7 @@ export async function createAuthenticatedContext({
 
   const chatPage = new ChatPage(page);
   await chatPage.createNewChat();
-  await chatPage.chooseModelFromSelector('Llama-3.3');
+  await chatPage.chooseModelFromSelector('Llama-3.1-Math');
   await expect(chatPage.getSelectedModel()).resolves.toEqual('Reasoning model');
 
   await page.waitForTimeout(1000);

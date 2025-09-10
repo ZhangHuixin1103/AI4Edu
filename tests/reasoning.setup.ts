@@ -11,7 +11,7 @@ setup('switch to reasoning model', async ({ page }) => {
   const chatPage = new ChatPage(page);
   await chatPage.createNewChat();
 
-  await chatPage.chooseModelFromSelector('Llama-3.3');
+  await chatPage.chooseModelFromSelector('Llama-3.1-Math');
 
   await expect(chatPage.getSelectedModel()).resolves.toEqual('Reasoning model');
 
