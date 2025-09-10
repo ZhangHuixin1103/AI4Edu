@@ -35,8 +35,8 @@ const languageModels = {
     }),
     model: ollama('llama-math'),
   }),
-  'title-model': xai('grok-2-1212'),
-  'artifact-model': xai('grok-2-1212'),
+  'title-model': deepinfra("Qwen/Qwen2.5-72B-Instruct"),
+  'artifact-model': deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
 };
 
 export const myProvider = isTestEnvironment
