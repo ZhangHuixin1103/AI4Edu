@@ -31,9 +31,12 @@ const languageModels = {
   }),
   "Llama-3.1-Math": wrapLanguageModel({
     middleware: extractReasoningMiddleware({
-      tagName: 'think',
+      tagName: "think",
     }),
-    model: ollama('llama-math'),
+    // @ts-expect-error runtime supports this
+    model: ollama("llama-math", {
+      baseUrl: process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434",
+    }),
   }),
   'title-model': deepinfra("Qwen/Qwen2.5-72B-Instruct"),
   'artifact-model': deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
