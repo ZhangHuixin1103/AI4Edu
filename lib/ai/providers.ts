@@ -39,64 +39,75 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
 
   const stream = new ReadableStream({
     async start(controller) {
-      try {
-        // Continue reading from the stream until it's explicitly closed.
-        while (!closed) {
+      // The main processing function to be called recursively.
+      const processText = async () => {
+        try {
           const { done, value } = await reader.read();
-
-          // If the original source stream is finished, break the loop.
           if (done) {
-            break;
+            // If the source stream ends without a `[DONE]` message, we close our controller.
+            if (!closed) {
+              controller.close();
+              closed = true;
+            }
+            return;
           }
 
           buffer += decoder.decode(value, { stream: true });
 
-          // SSE events are separated by double newlines. Split them.
           const events = buffer.split('\n\n');
-          // The last item might be an incomplete event, so keep it in the buffer for the next read.
           buffer = events.pop() || '';
 
           for (const event of events) {
-            // If the stream was closed in a previous iteration, stop processing new events.
-            if (closed) break;
-
             const lines = event.split('\n').filter(line => line.startsWith('data: '));
             for (const line of lines) {
               const jsonText = line.replace(/^data:\s*/, '').trim();
               if (!jsonText) continue;
 
-              // The '[DONE]' message signifies the end of the stream.
               if (jsonText === '[DONE]') {
-                controller.close();
-                closed = true;
-                // **CRITICAL FIX**: Immediately break out of the inner loop to stop processing any more lines.
-                break;
+                // ✅ **CRITICAL FIX**: Immediately terminate the entire `start` function.
+                if (!closed) {
+                  controller.close();
+                  closed = true;
+                }
+                return; // This exits the entire processing logic.
+              }
+
+              // It is crucial to check `closed` here before enqueueing.
+              if (closed) {
+                  console.warn('Attempted to enqueue chunk after stream was closed:', jsonText);
+                  continue; // Skip if closed.
               }
 
               try {
                 const chunk = JSON.parse(jsonText);
-                // Enqueue the parsed data chunk to our new stream.
                 controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
               } catch (err) {
                 console.warn('JSON parse error:', jsonText, err);
               }
             }
           }
+          
+          // If not closed, continue reading the stream.
+          if (!closed) {
+            await processText();
+          }
+
+        } catch (err) {
+          if (!closed) {
+            console.error('Stream processing error:', err);
+            controller.error(err);
+          }
         }
-      } catch (err) {
-        // Handle any unexpected errors during stream processing.
-        if (!closed) {
-          console.error('Stream processing error:', err);
-          controller.error(err);
-        }
-      } finally {
-        // This block ensures the stream is always properly closed and resources are released,
-        // even if the stream ends without a '[DONE]' message.
+      };
+
+      // Start processing and ensure resources are released in the end.
+      processText().finally(() => {
         if (!closed) {
           controller.close();
+          closed = true;
         }
         reader.releaseLock();
-      }
+      });
     },
   });
 
