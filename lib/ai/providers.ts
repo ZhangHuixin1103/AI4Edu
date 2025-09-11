@@ -17,8 +17,11 @@ import {
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const urlString = typeof input === 'string' ? input : input.toString();
-  // Ollama's strict compatibility mode requires the OpenAI-compatible `/v1/chat/completions` endpoint.
+  // Replace /chat with /v1/chat/completions for OpenAI-compatible endpoint
   const correctedUrl = urlString.replace(/\/chat(\/|$)/, '/v1/chat/completions$1');
+  console.log('Original URL:', urlString);
+  console.log('Corrected URL:', correctedUrl);
+  console.log('Request Body:', init?.body);
 
   const response = await fetch(correctedUrl, init);
   if (!response.ok) {
@@ -26,7 +29,6 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
     return response;
   }
 
-  // Ensure the response is a stream and has a body before proceeding.
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/event-stream') || !response.body) {
     return response;
@@ -39,75 +41,81 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
 
   const stream = new ReadableStream({
     async start(controller) {
-      // The main processing function to be called recursively.
-      const processText = async () => {
-        try {
+      try {
+        while (!closed) {
           const { done, value } = await reader.read();
-          if (done) {
-            // If the source stream ends without a `[DONE]` message, we close our controller.
-            if (!closed) {
-              controller.close();
-              closed = true;
-            }
-            return;
-          }
-
+          if (done) break;
           buffer += decoder.decode(value, { stream: true });
 
+          // Split on \n\n for complete SSE events
           const events = buffer.split('\n\n');
-          buffer = events.pop() || '';
+          buffer = events.pop() || ''; // Keep incomplete event
 
           for (const event of events) {
+            if (closed) break;
             const lines = event.split('\n').filter(line => line.startsWith('data: '));
             for (const line of lines) {
               const jsonText = line.replace(/^data:\s*/, '').trim();
               if (!jsonText) continue;
-
               if (jsonText === '[DONE]') {
-                // ✅ **CRITICAL FIX**: Immediately terminate the entire `start` function.
                 if (!closed) {
                   controller.close();
                   closed = true;
                 }
-                return; // This exits the entire processing logic.
+                continue; // Process remaining lines in the event
               }
-
-              // It is crucial to check `closed` here before enqueueing.
-              if (closed) {
-                  console.warn('Attempted to enqueue chunk after stream was closed:', jsonText);
-                  continue; // Skip if closed.
-              }
-
               try {
                 const chunk = JSON.parse(jsonText);
-                controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
+                if (!closed) {
+                  controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
+                }
               } catch (err) {
-                console.warn('JSON parse error:', jsonText, err);
+                console.warn('JSON parse error in main loop:', jsonText, err);
               }
             }
           }
-          
-          // If not closed, continue reading the stream.
-          if (!closed) {
-            await processText();
-          }
+        }
 
-        } catch (err) {
-          if (!closed) {
-            console.error('Stream processing error:', err);
-            controller.error(err);
+        // Process residual buffer
+        if (buffer.trim() && !closed) {
+          const events = buffer.split('\n\n');
+          for (const event of events) {
+            if (closed) break;
+            const lines = event.split('\n').filter(line => line.startsWith('data: '));
+            for (const line of lines) {
+              const jsonText = line.replace(/^data:\s*/, '').trim();
+              if (!jsonText) continue;
+              if (jsonText === '[DONE]') {
+                if (!closed) {
+                  controller.close();
+                  closed = true;
+                }
+                continue;
+              }
+              try {
+                const chunk = JSON.parse(jsonText);
+                if (!closed) {
+                  controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
+                }
+              } catch (err) {
+                console.warn('JSON parse error in residual buffer:', jsonText, err);
+              }
+            }
           }
         }
-      };
 
-      // Start processing and ensure resources are released in the end.
-      processText().finally(() => {
         if (!closed) {
           controller.close();
           closed = true;
         }
+      } catch (err) {
+        if (!closed) {
+          console.error('Stream processing error:', err);
+          controller.error(err);
+        }
+      } finally {
         reader.releaseLock();
-      });
+      }
     },
   });
 
