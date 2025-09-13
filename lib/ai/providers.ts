@@ -17,11 +17,7 @@ import {
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const urlString = typeof input === 'string' ? input : input.toString();
-  // Replace /chat with /v1/chat/completions for OpenAI-compatible endpoint
   const correctedUrl = urlString.replace(/\/chat(\/|$)/, '/v1/chat/completions$1');
-  console.log('Original URL:', urlString);
-  console.log('Corrected URL:', correctedUrl);
-  console.log('Request Body:', init?.body);
 
   const response = await fetch(correctedUrl, init);
   if (!response.ok) {
@@ -41,81 +37,53 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
 
   const stream = new ReadableStream({
     async start(controller) {
-      try {
-        while (!closed) {
+      const processText = async () => {
+        try {
           const { done, value } = await reader.read();
-          if (done) break;
+
+          if (done) {
+            if (!closed) controller.close();
+            return;
+          }
+
           buffer += decoder.decode(value, { stream: true });
-
-          // Split on \n\n for complete SSE events
           const events = buffer.split('\n\n');
-          buffer = events.pop() || ''; // Keep incomplete event
+          buffer = events.pop() || '';
 
           for (const event of events) {
-            if (closed) break;
             const lines = event.split('\n').filter(line => line.startsWith('data: '));
             for (const line of lines) {
               const jsonText = line.replace(/^data:\s*/, '').trim();
               if (!jsonText) continue;
+
               if (jsonText === '[DONE]') {
-                if (!closed) {
-                  controller.close();
-                  closed = true;
-                }
-                continue; // Process remaining lines in the event
+                if (!closed) controller.close();
+                closed = true;
+                return;
               }
+
+              if (closed) continue;
+
               try {
                 const chunk = JSON.parse(jsonText);
-                if (!closed) {
-                  controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
-                }
+                controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
               } catch (err) {
-                console.warn('JSON parse error in main loop:', jsonText, err);
+                console.warn('JSON parse error:', jsonText, err);
               }
             }
           }
-        }
 
-        // Process residual buffer
-        if (buffer.trim() && !closed) {
-          const events = buffer.split('\n\n');
-          for (const event of events) {
-            if (closed) break;
-            const lines = event.split('\n').filter(line => line.startsWith('data: '));
-            for (const line of lines) {
-              const jsonText = line.replace(/^data:\s*/, '').trim();
-              if (!jsonText) continue;
-              if (jsonText === '[DONE]') {
-                if (!closed) {
-                  controller.close();
-                  closed = true;
-                }
-                continue;
-              }
-              try {
-                const chunk = JSON.parse(jsonText);
-                if (!closed) {
-                  controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
-                }
-              } catch (err) {
-                console.warn('JSON parse error in residual buffer:', jsonText, err);
-              }
-            }
-          }
-        }
+          if (!closed) await processText();
 
-        if (!closed) {
-          controller.close();
-          closed = true;
+        } catch (err) {
+          if (!closed) controller.error(err);
         }
-      } catch (err) {
-        if (!closed) {
-          console.error('Stream processing error:', err);
-          controller.error(err);
-        }
-      } finally {
+      };
+
+      processText().finally(() => {
+        if (!closed) controller.close();
         reader.releaseLock();
-      }
+      });
     },
   });
 

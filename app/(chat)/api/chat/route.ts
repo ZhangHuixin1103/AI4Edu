@@ -28,6 +28,7 @@ import {
   createDataStream,
   smoothStream,
   streamText,
+  type Message,
 } from 'ai';
 import { differenceInSeconds } from 'date-fns';
 // import { after } from 'next/server';
@@ -39,6 +40,32 @@ import { generateTitleFromUserMessage } from '../../actions';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 
 export const maxDuration = 60;
+
+// Add this helper function to safely convert DB messages to UI messages.
+function dbMessageToUIMessage(dbMessage: any): Message {
+  const role = ['user', 'assistant', 'system', 'function', 'tool', 'data'].includes(dbMessage.role)
+    ? dbMessage.role
+    : 'user'; // Default to 'user' to prevent errors.
+
+  // Safely extract the content string from various possible 'parts' structures.
+  let content = '';
+  if (typeof dbMessage.parts === 'string') {
+    content = dbMessage.parts;
+  } else if (Array.isArray(dbMessage.parts) && dbMessage.parts.length > 0) {
+    const firstPart = dbMessage.parts[0];
+    if (typeof firstPart === 'string') {
+      content = firstPart;
+    } else if (typeof firstPart.text === 'string') {
+      content = firstPart.text;
+    }
+  }
+
+  return {
+    id: dbMessage.id,
+    role,
+    content,
+  };
+}
 
 // let globalStreamContext: ResumableStreamContext | null = null;
 
@@ -113,10 +140,10 @@ export async function POST(request: Request) {
     }
 
     const previousMessages = await getMessagesByChatId({ id });
+    const convertedPreviousMessages = previousMessages.map(dbMessageToUIMessage);
 
     const messages = appendClientMessage({
-      // @ts-expect-error: todo add type conversion from DBMessage[] to UIMessage[]
-      messages: previousMessages,
+      messages: convertedPreviousMessages,
       message,
     });
 
