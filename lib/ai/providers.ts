@@ -30,60 +30,63 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
     return response;
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder('utf-8');
-  let buffer = '';
-  let closed = false;
-
   const stream = new ReadableStream({
     async start(controller) {
-      const processText = async () => {
+      // All stream-related variables are encapsulated within the 'start' function.
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      // An async IIFE (Immediately Invoked Function Expression) to handle the processing loop.
+      // This allows us to use a clean try/catch/finally structure for resource management.
+      (async () => {
         try {
-          const { done, value } = await reader.read();
+          while (true) {
+            const { done, value } = await reader.read();
+            // If the underlying stream from fetch is finished, exit the loop.
+            if (done) {
+              break;
+            }
 
-          if (done) {
-            if (!closed) controller.close();
-            return;
-          }
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split('\n\n');
+            buffer = events.pop() || ''; // Keep the last, possibly incomplete, event.
 
-          buffer += decoder.decode(value, { stream: true });
-          const events = buffer.split('\n\n');
-          buffer = events.pop() || '';
-
-          for (const event of events) {
-            const lines = event.split('\n').filter(line => line.startsWith('data: '));
-            for (const line of lines) {
-              const jsonText = line.replace(/^data:\s*/, '').trim();
-              if (!jsonText) continue;
-
-              if (jsonText === '[DONE]') {
-                if (!closed) controller.close();
-                closed = true;
-                return;
+            for (const event of events) {
+              if (!event.startsWith('data: ')) {
+                continue;
               }
 
-              if (closed) continue;
+              const jsonText = event.replace(/^data:\s*/, '').trim();
+              if (!jsonText) {
+                continue;
+              }
+
+              // When the '[DONE]' message is received, we exit the loop immediately.
+              // This is the clean exit strategy from the other person's code.
+              if (jsonText === '[DONE]') {
+                return; // Exit the async IIFE entirely.
+              }
 
               try {
                 const chunk = JSON.parse(jsonText);
                 controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
               } catch (err) {
-                console.warn('JSON parse error:', jsonText, err);
+                console.warn('JSON parse error in stream chunk:', jsonText, err);
               }
             }
           }
-
-          if (!closed) await processText();
-
         } catch (err) {
-          if (!closed) controller.error(err);
+          // If any error occurs during the read loop, propagate it to the controller.
+          controller.error(err);
+        } finally {
+          // This block is guaranteed to execute, ensuring the stream is always closed
+          // and the reader lock is released, preventing memory leaks.
+          // This is the most robust way to handle cleanup.
+          controller.close();
+          reader.releaseLock();
         }
-      };
-
-      processText().finally(() => {
-        if (!closed) controller.close();
-        reader.releaseLock();
-      });
+      })();
     },
   });
 
