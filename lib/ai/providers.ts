@@ -33,6 +33,10 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
 
   const stream = new ReadableStream({
     async start(controller) {
+      if (!response.body) {
+        controller.error(new Error('Response body unexpectedly null'));
+        return;
+      }
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';

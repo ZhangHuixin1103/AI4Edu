@@ -6,7 +6,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
 
-import { UserSettingIcon } from '@/components/icons';
+import { LoaderIcon, UserSettingIcon } from '@/components/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,6 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { guestRegex } from '@/lib/constants';
-import { LoaderIcon } from './icons';
 import { toast } from './toast';
 
 export function SidebarUserNav({ user }: { user: User }) {
