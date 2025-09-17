@@ -43,8 +43,7 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
           const { done, value } = await reader.read();
           if (done) {
             console.log('%c[STREAM] Reader done, emitting final DONE and closing', 'color: green;');
-            // Emit a final DONE event for SDK compatibility
-            controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+            controller.enqueue(new TextEncoder().encode('{"done": true}\n'));
             controller.close();
             break;
           }
@@ -55,10 +54,9 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
           buffer += chunkText;
 
           const events = buffer.split('\n\n');
-          buffer = events.pop()?.trim() || '';  // Trim partial buffer for safety
+          buffer = events.pop()?.trim() || '';
 
           for (const event of events) {
-            if (event.trim() === '') continue;
             if (!event.startsWith('data: ')) {
               console.debug('%c[STREAM] Skipping non-data event:', 'color: blue;', event.substring(0, 50));
               continue;
@@ -69,17 +67,24 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
 
             if (dataLine === '[DONE]') {
               console.log('%c[STREAM] DONE received, closing stream', 'color: green;');
-              controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+              controller.enqueue(new TextEncoder().encode('{"done": true}\n'));
               controller.close();
               closed = true;
               break;
             }
 
-            // Re-emit as SSE without re-parsing (backend is OpenAI-compatible)
-            // If needed, parse and modify: const chunk = JSON.parse(dataLine); /* edit */ const newJson = JSON.stringify(chunk);
-            const sseChunk = `data: ${dataLine}\n\n`;
-            console.log('%c[STREAM] Emitting SSE chunk:', 'color: green;', dataLine.substring(0, 100) + '...');  // Log first 100 chars
-            controller.enqueue(new TextEncoder().encode(sseChunk));
+            try {
+              const chunk = JSON.parse(dataLine);
+              console.log('%c[STREAM] Parsed chunk:', 'color: green;', {
+                id: chunk.id,
+                role: chunk?.choices?.[0]?.delta?.role,
+                content: chunk?.choices?.[0]?.delta?.content ?? '',
+                finish_reason: chunk?.choices?.[0]?.finish_reason,
+              });
+              controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
+            } catch (err) {
+              console.warn('%c[STREAM] JSON parse error:', 'color: orange;', dataLine.substring(0, 100), err);
+            }
           }
         }
       } catch (err) {
@@ -93,11 +98,7 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
   });
 
   return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
+    headers: { 'Content-Type': 'application/x-ndjson' },
   });
 };
 
