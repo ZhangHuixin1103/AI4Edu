@@ -21,73 +21,83 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
 
   const response = await fetch(correctedUrl, init);
   if (!response.ok) {
-    console.error('[STREAM] Fetch error:', await response.text());
+    console.error('%c[STREAM] Fetch error:', 'color: red;', await response.text());
     return response;
   }
 
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/event-stream') || !response.body) {
-    console.warn('[STREAM] No event-stream or empty body');
+    console.warn('%c[STREAM] No event-stream or empty body', 'color: orange;');
     return response;
   }
 
   const stream = new ReadableStream({
     async start(controller) {
-      if (!response.body) {
-        controller.error(new Error('Response body unexpectedly null'));
-        return;
-      }
-      const reader = response.body.getReader();
+      const reader = response.body!.getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
+      let closed = false;
 
       try {
-        while (true) {
+        while (!closed) {
           const { done, value } = await reader.read();
           if (done) {
-            console.debug('[STREAM] Reader done, exiting loop');
+            console.log('%c[STREAM] Reader done, emitting final DONE and closing', 'color: green;');
+            // Emit a final DONE event for SDK compatibility
+            controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+            controller.close();
             break;
           }
 
-          buffer += decoder.decode(value, { stream: true });
+          if (!value) continue;
+          const chunkText = decoder.decode(value, { stream: true });
+          console.log('%c[STREAM] Raw chunk received:', 'color: green;', chunkText.length, 'bytes');
+          buffer += chunkText;
+
           const events = buffer.split('\n\n');
-          buffer = events.pop() || '';
+          buffer = events.pop()?.trim() || '';  // Trim partial buffer for safety
 
           for (const event of events) {
-            if (!event.startsWith('data: ')) continue;
+            if (event.trim() === '') continue;
+            if (!event.startsWith('data: ')) {
+              console.debug('%c[STREAM] Skipping non-data event:', 'color: blue;', event.substring(0, 50));
+              continue;
+            }
 
-            const jsonText = event.replace(/^data:\s*/, '').trim();
-            if (!jsonText) continue;
+            const dataLine = event.replace(/^data:\s*/, '').trim();
+            if (!dataLine) continue;
 
-            if (jsonText === '[DONE]') {
-              console.debug('[STREAM] DONE received, closing stream');
+            if (dataLine === '[DONE]') {
+              console.log('%c[STREAM] DONE received, closing stream', 'color: green;');
+              controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
               controller.close();
-              reader.releaseLock();
-              return;
+              closed = true;
+              break;
             }
 
-            try {
-              const chunk = JSON.parse(jsonText);
-              controller.enqueue(
-                new TextEncoder().encode(JSON.stringify(chunk) + '\n')
-              );
-            } catch (err) {
-              console.warn('[STREAM] JSON parse error:', jsonText, err);
-            }
+            // Re-emit as SSE without re-parsing (backend is OpenAI-compatible)
+            // If needed, parse and modify: const chunk = JSON.parse(dataLine); /* edit */ const newJson = JSON.stringify(chunk);
+            const sseChunk = `data: ${dataLine}\n\n`;
+            console.log('%c[STREAM] Emitting SSE chunk:', 'color: green;', dataLine.substring(0, 100) + '...');  // Log first 100 chars
+            controller.enqueue(new TextEncoder().encode(sseChunk));
           }
         }
       } catch (err) {
-        console.error('[STREAM] Error during read loop:', err);
+        console.error('%c[STREAM] Error during read loop:', 'color: red;', err);
         controller.error(err);
       } finally {
-        console.debug('[STREAM] Releasing reader lock');
+        console.log('%c[STREAM] Releasing reader lock', 'color: green;');
         reader.releaseLock();
       }
     },
   });
 
   return new Response(stream, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
   });
 };
 
