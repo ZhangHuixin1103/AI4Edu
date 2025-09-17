@@ -16,89 +16,98 @@ import {
 } from './models.test';
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-  const urlString = typeof input === 'string' ? input : input.toString();
-  const correctedUrl = urlString.replace(/\/chat(\/|$)/, '/v1/chat/completions$1');
+  const urlString = typeof input === "string" ? input : input.toString();
+  const correctedUrl = urlString.replace(/\/chat(\/|$)/, "/v1/chat/completions$1");
 
   const response = await fetch(correctedUrl, init);
   if (!response.ok) {
-    console.error('%c[STREAM] Fetch error:', 'color: red;', await response.text());
+    console.error("[STREAM] Fetch error:", await response.text());
     return response;
   }
 
-  const contentType = response.headers.get('content-type') || '';
-  if (!contentType.includes('text/event-stream') || !response.body) {
-    console.warn('%c[STREAM] No event-stream or empty body', 'color: orange;');
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("text/event-stream") || !response.body) {
+    console.warn("[STREAM] No event-stream or empty body");
     return response;
   }
 
   const stream = new ReadableStream({
     async start(controller) {
       const reader = response.body!.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let buffer = '';
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
       let closed = false;
 
       try {
         while (!closed) {
           const { done, value } = await reader.read();
           if (done) {
-            console.log('%c[STREAM] Reader done, emitting final DONE and closing', 'color: green;');
-            controller.enqueue(new TextEncoder().encode('{"done": true}\n'));
-            controller.close();
-            break;
+            console.log("[STREAM] Reader done, breaking loop");
+            break; // 不再 close，由 [DONE] 分支统一负责
           }
 
           if (!value) continue;
           const chunkText = decoder.decode(value, { stream: true });
-          console.log('%c[STREAM] Raw chunk received:', 'color: green;', chunkText.length, 'bytes');
+          console.log("[STREAM] Raw chunk received:", chunkText.length, "bytes");
           buffer += chunkText;
 
-          const events = buffer.split('\n\n');
-          buffer = events.pop()?.trim() || '';
+          const events = buffer.split("\n\n");
+          buffer = events.pop()?.trim() || ""; // 保留未完整的部分
 
           for (const event of events) {
-            if (!event.startsWith('data: ')) {
-              console.debug('%c[STREAM] Skipping non-data event:', 'color: blue;', event.substring(0, 50));
+            if (!event.startsWith("data: ")) {
+              console.debug("[STREAM] Skipping non-data event:", event.substring(0, 50));
               continue;
             }
 
-            const dataLine = event.replace(/^data:\s*/, '').trim();
+            const dataLine = event.replace(/^data:\s*/, "").trim();
             if (!dataLine) continue;
 
-            if (dataLine === '[DONE]') {
-              console.log('%c[STREAM] DONE received, closing stream', 'color: green;');
-              controller.enqueue(new TextEncoder().encode('{"done": true}\n'));
-              controller.close();
-              closed = true;
+            if (dataLine === "[DONE]") {
+              console.log("[STREAM] DONE received, closing stream");
+              if (!closed) {
+                controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+                controller.close();
+                closed = true;
+              }
               break;
             }
 
             try {
               const chunk = JSON.parse(dataLine);
-              console.log('%c[STREAM] Parsed chunk:', 'color: green;', {
+              console.log("[STREAM] Parsed chunk:", {
                 id: chunk.id,
                 role: chunk?.choices?.[0]?.delta?.role,
-                content: chunk?.choices?.[0]?.delta?.content ?? '',
+                content: chunk?.choices?.[0]?.delta?.content ?? "",
                 finish_reason: chunk?.choices?.[0]?.finish_reason,
               });
-              controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
+
+              if (!closed) {
+                const sseChunk = `data: ${JSON.stringify(chunk)}\n\n`;
+                controller.enqueue(new TextEncoder().encode(sseChunk));
+              }
             } catch (err) {
-              console.warn('%c[STREAM] JSON parse error:', 'color: orange;', dataLine.substring(0, 100), err);
+              console.warn("[STREAM] JSON parse error, skipping:", dataLine.substring(0, 100), err);
+              continue; // 直接跳过错误行
             }
           }
         }
       } catch (err) {
-        console.error('%c[STREAM] Error during read loop:', 'color: red;', err);
-        controller.error(err);
+        console.error("[STREAM] Error during read loop:", err);
+        if (!closed) controller.error(err);
       } finally {
-        console.log('%c[STREAM] Releasing reader lock', 'color: green;');
+        console.log("[STREAM] Releasing reader lock");
         reader.releaseLock();
       }
     },
   });
 
   return new Response(stream, {
-    headers: { 'Content-Type': 'application/x-ndjson' },
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
   });
 };
 
