@@ -2,6 +2,7 @@ import { deepinfra } from "@ai-sdk/deepinfra";
 import { google } from '@ai-sdk/google';
 import { xai } from '@ai-sdk/xai';
 import { createOllama } from 'ollama-ai-provider-v2';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import {
   customProvider,
   extractReasoningMiddleware,
@@ -17,18 +18,20 @@ import {
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const urlString = typeof input === "string" ? input : input.toString();
-  const response = await fetch(urlString, init);
+  const correctedUrl = urlString.replace(/\/chat(\/|$)/, "/v1/chat/completions$1");
 
+  const response = await fetch(correctedUrl, init);
   if (!response.ok) {
     const errorText = await response.clone().text();
     console.error("[STREAM] Fetch error:", errorText);
+    return response;
   }
 
   return response;
 };
 
 const ollamaProvider = createOllama({
-  baseURL: process.env.OLLAMA_BASE_URL ?? "http://localhost:11434/api",
+  baseURL: process.env.OLLAMA_BASE_URL,
   compatibility: "strict",
   fetch: customFetch,
 });
