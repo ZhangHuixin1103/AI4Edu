@@ -33,6 +33,8 @@ const ollamaProvider = createOllama({
   fetch: customFetch,
 });
 
+console.log("OLLAMA_BASE_URL =", process.env.OLLAMA_BASE_URL);
+
 const languageModels = {
   "Llama-3.3": wrapLanguageModel({
     middleware: extractReasoningMiddleware({
