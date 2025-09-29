@@ -18,9 +18,7 @@ import {
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const urlString = typeof input === "string" ? input : input.toString();
-  const correctedUrl = urlString.replace(/\/chat(\/|$)/, "/v1/chat/completions$1");
-
-  const response = await fetch(correctedUrl, init);
+  const response = await fetch(urlString, init);
   if (!response.ok) {
     const errorText = await response.clone().text();
     console.error("[STREAM] Fetch error:", errorText);
@@ -32,7 +30,6 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
 
 const ollamaProvider = createOllama({
   baseURL: process.env.OLLAMA_BASE_URL,
-  compatibility: "strict",
   fetch: customFetch,
 });
 
