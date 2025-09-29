@@ -17,102 +17,18 @@ import {
 
 const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const urlString = typeof input === "string" ? input : input.toString();
-  const correctedUrl = urlString.replace(/\/chat(\/|$)/, "/v1/chat/completions$1");
+  const response = await fetch(urlString, init);
 
-  const response = await fetch(correctedUrl, init);
   if (!response.ok) {
-    console.error("[STREAM] Fetch error:", await response.text());
-    return response;
+    const errorText = await response.clone().text();
+    console.error("[STREAM] Fetch error:", errorText);
   }
 
-  const contentType = response.headers.get("content-type") || "";
-  if (!contentType.includes("text/event-stream") || !response.body) {
-    console.warn("[STREAM] No event-stream or empty body");
-    return response;
-  }
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let buffer = "";
-      let closed = false;
-
-      try {
-        while (!closed) {
-          const { done, value } = await reader.read();
-          if (done) {
-            console.log("[STREAM] Reader done, breaking loop");
-            break; // 不再 close，由 [DONE] 分支统一负责
-          }
-
-          if (!value) continue;
-          const chunkText = decoder.decode(value, { stream: true });
-          console.log("[STREAM] Raw chunk received:", chunkText.length, "bytes");
-          buffer += chunkText;
-
-          const events = buffer.split("\n\n");
-          buffer = events.pop()?.trim() || ""; // 保留未完整的部分
-
-          for (const event of events) {
-            if (!event.startsWith("data: ")) {
-              console.debug("[STREAM] Skipping non-data event:", event.substring(0, 50));
-              continue;
-            }
-
-            const dataLine = event.replace(/^data:\s*/, "").trim();
-            if (!dataLine) continue;
-
-            if (dataLine === "[DONE]") {
-              console.log("[STREAM] DONE received, closing stream");
-              if (!closed) {
-                controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-                controller.close();
-                closed = true;
-              }
-              break;
-            }
-
-            try {
-              const chunk = JSON.parse(dataLine);
-              console.log("[STREAM] Parsed chunk:", {
-                id: chunk.id,
-                role: chunk?.choices?.[0]?.delta?.role,
-                content: chunk?.choices?.[0]?.delta?.content ?? "",
-                finish_reason: chunk?.choices?.[0]?.finish_reason,
-              });
-
-              if (!closed) {
-                const sseChunk = `data: ${JSON.stringify(chunk)}\n\n`;
-                controller.enqueue(new TextEncoder().encode(sseChunk));
-              }
-            } catch (err) {
-              console.warn("[STREAM] JSON parse error, skipping:", dataLine.substring(0, 100), err);
-              continue; // 直接跳过错误行
-            }
-          }
-        }
-      } catch (err) {
-        console.error("[STREAM] Error during read loop:", err);
-        if (!closed) controller.error(err);
-      } finally {
-        console.log("[STREAM] Releasing reader lock");
-        reader.releaseLock();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
-  });
+  return response;
 };
 
 const ollamaProvider = createOllama({
-  baseURL: process.env.OLLAMA_BASE_URL, // https://tamu-ta.tamu.ngrok.app/v1
+  baseURL: process.env.OLLAMA_BASE_URL ?? "http://localhost:11434/api",
   compatibility: "strict",
   fetch: customFetch,
 });
