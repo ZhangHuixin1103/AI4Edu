@@ -28,12 +28,16 @@ const customFetch = async (input: RequestInfo | URL, init?: RequestInit): Promis
   return response;
 };
 
+let base = process.env.OLLAMA_BASE_URL || "";
+base = base.replace(/\/+$/, "");
+if (!base.endsWith("/api")) {
+  base = `${base}/api`;
+}
+
 const ollamaProvider = createOllama({
-  baseURL: process.env.OLLAMA_BASE_URL,
+  baseURL: base,
   fetch: customFetch,
 });
-
-console.log("OLLAMA_BASE_URL =", process.env.OLLAMA_BASE_URL);
 
 const languageModels = {
   "Llama-3.3": wrapLanguageModel({
