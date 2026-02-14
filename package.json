@@ -65,6 +65,7 @@
     "@vercel/otel": "^1.12.0",
     "@vercel/postgres": "^0.10.0",
     "ai": "4.3.13",
+    "ai-sdk-ollama": "^0.13.0",
     "autoevals": "^0.0.125",
     "axios": "^1.11.0",
     "bcrypt-ts": "^5.0.2",
