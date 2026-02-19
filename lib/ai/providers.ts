@@ -2,7 +2,7 @@ import { deepinfra } from "@ai-sdk/deepinfra";
 import { google } from '@ai-sdk/google';
 import { xai } from '@ai-sdk/xai';
 import { createOllama } from 'ollama-ai-provider-v2';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { createOpenAI } from '@ai-sdk/openai';
 import {
   customProvider,
   extractReasoningMiddleware,
@@ -39,6 +39,11 @@ const ollamaProvider = createOllama({
   fetch: customFetch,
 });
 
+const vllmProvider = createOpenAI({
+  baseURL: process.env.VLLM_BASE_URL || "http://localhost:8001/v1",
+  apiKey: "EMPTY",
+});
+
 const languageModels = {
   "Llama-3.3": wrapLanguageModel({
     middleware: extractReasoningMiddleware({
@@ -53,12 +58,7 @@ const languageModels = {
     }),
     model: google("gemini-1.5-pro"),
   }),
-  "Llama-3.1-Math": wrapLanguageModel({
-    middleware: extractReasoningMiddleware({
-      tagName: "think",
-    }),
-    model: ollamaProvider("llama-math"),
-  }),
+  "Llama-3.1-Math": vllmProvider("Qwen3-32B-SFT"),
   'title-model': deepinfra("Qwen/Qwen2.5-72B-Instruct"),
   'artifact-model': deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
 };

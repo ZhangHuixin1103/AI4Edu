@@ -19,24 +19,24 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the advantages',
-      label: 'of using fractions & negative numbers?',
-      action: 'What are the advantages of using fractions and negative numbers?',
+      title: 'If 3 notebooks cost $6,',
+      label: 'how much do 7 notebooks cost?',
+      action: 'If 3 notebooks cost $6, how much do 7 notebooks cost?',
     },
     {
-      title: 'Write pseudocode to',
-      label: `demonstrate commutative property`,
-      action: `Write pseudocode to demonstrate commutative property`,
+      title: 'A car travels 60 miles in 2 hours.',
+      label: 'How far does it go in 5 hours?',
+      action: 'A car travels 60 miles in 2 hours. How far does it go in 5 hours?',
     },
     {
-      title: 'Help me explain',
-      label: `formula for the volume of a cone`,
-      action: `Help me write an explanation about formula for the volume of a cone`,
+      title: 'A recipe for 4 people uses 2 cups of rice.',
+      label: 'How much for 6 people?',
+      action: 'A recipe for 4 people uses 2 cups of rice. How much rice do I need for 6 people?',
     },
     {
-      title: 'What is the relationship',
-      label: 'between parallelogram and rhombus?',
-      action: 'What is the relationship between parallelogram and rhombus?',
+      title: 'The ratio of boys to girls is 3:5.',
+      label: 'If there are 24 boys, how many girls?',
+      action: 'The ratio of boys to girls in a class is 3:5. If there are 24 boys, how many girls are there?',
     },
   ];
 
