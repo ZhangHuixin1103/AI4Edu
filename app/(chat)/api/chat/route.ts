@@ -177,7 +177,7 @@ export async function POST(request: Request) {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           // system: systemPrompt({ selectedChatModel, requestHints }),
-          system: systemPrompt({ selectedChatModel }),
+          system: systemPrompt({ selectedChatModel, turnCount: messages.filter(m => m.role === 'user').length }),
           messages,
           maxSteps: 5,
           experimental_activeTools:
