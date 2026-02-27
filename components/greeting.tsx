@@ -7,17 +7,17 @@ const mistakeItems = [
   {
     icon: '🛒',
     text: 'Grocery shopping problem',
-    prompt: 'If 4 pens cost $12, how much do 7 pens cost? Alex says: "7 is 3 more than 4, so I add $3 to $12 and get $15."',
+    prompt: 'If 4 pens cost $12, how much do 7 pens cost?',
   },
   {
     icon: '🚗',
     text: 'Road trip distance problem',
-    prompt: 'A car uses 2 gallons of gas to travel 50 miles. How many gallons for 200 miles? Alex says: "200 is 150 more than 50, so I need 2 + 150 = 152 gallons."',
+    prompt: 'A car uses 2 gallons of gas to travel 50 miles. How many gallons for 200 miles?',
   },
   {
     icon: '🍕',
     text: 'Pizza sharing problem',
-    prompt: 'A recipe makes 12 cookies with 3 cups of flour. How much flour for 30 cookies? Alex says: "30 is 18 more than 12, so 3 + 18 = 21 cups of flour."',
+    prompt: 'A recipe makes 12 cookies with 3 cups of flour. How much flour for 30 cookies?',
   },
 ];
 
