@@ -5,19 +5,19 @@ import { motion } from 'framer-motion';
 
 const mistakeItems = [
   {
-    icon: '➕',
-    text: 'Adds instead of multiplying',
-    prompt: 'If 4 pens cost $12, how much do 6 pens cost?',
+    icon: '🛒',
+    text: 'Grocery shopping problem',
+    prompt: 'If 4 pens cost $12, how much do 7 pens cost? Alex says: "7 is 3 more than 4, so I add $3 to $12 and get $15."',
   },
   {
-    icon: '🔄',
-    text: "Can't see how one quantity changes another",
-    prompt: 'A car uses 2 gallons of gas to travel 50 miles. How many gallons does it need for 175 miles?',
+    icon: '🚗',
+    text: 'Road trip distance problem',
+    prompt: 'A car uses 2 gallons of gas to travel 50 miles. How many gallons for 200 miles? Alex says: "200 is 150 more than 50, so I need 2 + 150 = 152 gallons."',
   },
   {
-    icon: '📐',
-    text: 'Applies the same method to every problem',
-    prompt: 'The ratio of red to blue marbles is 3:4. If there are 21 red marbles, how many blue marbles are there?',
+    icon: '🍕',
+    text: 'Pizza sharing problem',
+    prompt: 'A recipe makes 12 cookies with 3 cups of flour. How much flour for 30 cookies? Alex says: "30 is 18 more than 12, so 3 + 18 = 21 cups of flour."',
   },
 ];
 
@@ -58,7 +58,7 @@ export const Greeting = ({ chatId, append }: GreetingProps) => {
       >
         {/* Avatar */}
         <div className="shrink-0 size-14 rounded-full bg-amber-100 dark:bg-amber-900 border-2 border-amber-300 dark:border-amber-700 flex items-center justify-center text-3xl select-none">
-          🧑‍🎓
+        🙋
         </div>
 
         <div className="flex-1 min-w-0">
@@ -69,7 +69,7 @@ export const Greeting = ({ chatId, append }: GreetingProps) => {
           </div>
           {/* Speech bubble */}
           <div className="bg-white dark:bg-zinc-800 border border-amber-200 dark:border-amber-700 rounded-xl rounded-tl-none px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-            Umm… for this ratio problem, can&apos;t I just add the two numbers together? I mean, a ratio is just about the difference, right…?
+            Hey teacher! I tried this problem: &quot;If 3 pencils cost $6, how much do 7 pencils cost?&quot; I got $10, because 7 is 4 more than 3, so I just added $4 to $6. That&apos;s right, isn&apos;t it?
           </div>
         </div>
       </motion.div>
@@ -81,11 +81,10 @@ export const Greeting = ({ chatId, append }: GreetingProps) => {
         transition={{ delay: 0.4 }}
         className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed"
       >
-        You are talking with a{' '}
-        <span className="font-semibold text-zinc-700 dark:text-zinc-200">struggling middle school student</span>.
-        Alex has classic misconceptions around{' '}
-        <span className="font-semibold text-zinc-700 dark:text-zinc-200">ratios and proportional relationships</span> —
-        try to guide him the way a real teacher would.
+        You are talking with{' '}
+        <span className="font-semibold text-zinc-700 dark:text-zinc-200">Alex, a middle school student</span>.
+        He keeps making some kinds of mistakes on math problems.{' '}
+        <span className="font-semibold text-zinc-700 dark:text-zinc-200">Can you figure out what he&apos;s getting wrong and help him understand?</span>
       </motion.p>
 
       {/* Mistake tags — clickable */}
@@ -96,7 +95,7 @@ export const Greeting = ({ chatId, append }: GreetingProps) => {
         className="flex flex-col gap-2"
       >
         <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-          Click a mistake to start a related problem
+          Click a problem to see how Alex solves it
         </p>
         <div className="flex flex-wrap gap-2">
           {mistakeItems.map((item, i) => (
@@ -124,7 +123,7 @@ export const Greeting = ({ chatId, append }: GreetingProps) => {
         className="text-xs text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5"
       >
         <span className="inline-block size-1.5 rounded-full bg-green-400 animate-pulse" />
-        Give him a problem, or ask &quot;What do you think a ratio means?&quot; to get started
+        Try giving Alex a new problem, or ask him to explain his thinking
       </motion.p>
     </div>
   );
