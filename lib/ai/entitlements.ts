@@ -8,7 +8,11 @@ interface Entitlements {
 
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
   defaultType: {
+<<<<<<< Updated upstream
     maxMessagesPerDay: Infinity,
+=======
+    maxMessagesPerDay: 10,
+>>>>>>> Stashed changes
     availableChatModelIds: ['Llama-3.1-Math'],
   },
 
@@ -16,7 +20,11 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    * For users without an account
    */
   guest: {
+<<<<<<< Updated upstream
     maxMessagesPerDay: Infinity,
+=======
+    maxMessagesPerDay: 20,
+>>>>>>> Stashed changes
     availableChatModelIds: ['Llama-3.1-Math'],
   },
 
@@ -24,7 +32,11 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    * For users with an account
    */
   regular: {
+<<<<<<< Updated upstream
     maxMessagesPerDay: Infinity,
+=======
+    maxMessagesPerDay: 100,
+>>>>>>> Stashed changes
     availableChatModelIds: ['Llama-3.1-Math'],
   },
 
