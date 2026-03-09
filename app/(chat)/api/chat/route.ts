@@ -180,19 +180,7 @@ export async function POST(request: Request) {
           system: systemPrompt({ selectedChatModel, turnCount: messages.filter(m => m.role === 'user').length }),
           messages,
           maxSteps: 5,
-          experimental_activeTools:
-            selectedChatModel === 'Llama-3.3' ||
-              selectedChatModel === 'Qwen-2.5' ||
-              selectedChatModel === 'Gemini-1.5' ||
-              selectedChatModel === 'Llama-3.1-Math'
-              ? []
-              : [
-                'mathTool',
-                'getWeather',
-                'createDocument',
-                'updateDocument',
-                'requestSuggestions',
-              ],
+          experimental_activeTools: [],
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
           tools: {
