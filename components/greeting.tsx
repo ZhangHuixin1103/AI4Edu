@@ -58,8 +58,7 @@ export const Greeting = ({ chatId, append }: GreetingProps) => {
       >
         {/* Avatar */}
         <div className="shrink-0 size-14 rounded-full bg-amber-100 dark:bg-amber-900 border-2 border-amber-300 dark:border-amber-700 flex items-center justify-center text-3xl select-none">
-        🙋
-        🙋
+          🙋
         </div>
 
         <div className="flex-1 min-w-0">
@@ -70,7 +69,7 @@ export const Greeting = ({ chatId, append }: GreetingProps) => {
           </div>
           {/* Speech bubble */}
           <div className="bg-white dark:bg-zinc-800 border border-amber-200 dark:border-amber-700 rounded-xl rounded-tl-none px-4 py-3 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-            Hey teacher! I tried this problem: &quot;If 3 pencils cost $6, how much do 7 pencils cost?&quot; I got $10, because 7 is 4 more than 3, so I just added $4 to $6. That&apos;s right, isn&apos;t it?
+            Hi teacher! I&apos;m Alex, a 7th grader. We just started learning about ratios and proportions in math class — I already know how to do basic multiplication and division, and I think I understand what a ratio is!
           </div>
         </div>
       </motion.div>
