@@ -5,19 +5,19 @@ import { motion } from 'framer-motion';
 
 const mistakeItems = [
   {
-    icon: '🛒',
-    text: 'Grocery shopping problem',
-    prompt: 'If 4 pens cost $12, how much do 7 pens cost?',
+    icon: '🍊',
+    text: 'Orange juice mix problem',
+    prompt: "Today we're going to explore some recipes for making orange juice. Let's look at these mixes: Mix A has 2 cups concentrate and 3 cups water, Mix B has 1 cup concentrate and 4 cups water, Mix C has 4 cups concentrate and 8 cups water, and Mix D has 3 cups concentrate and 5 cups water. Which do you think will be the most \"orangey\"?",
+  },
+  {
+    icon: '🍫',
+    text: 'Chocolate sharing problem',
+    prompt: "Let's look at the Chocolate Problem. A chocolate bar is divided into 4 equal pieces. Lena eats 3 pieces. How much of the whole chocolate bar did Lena eat?",
   },
   {
     icon: '🚗',
-    text: 'Road trip distance problem',
-    prompt: 'A car uses 2 gallons of gas to travel 50 miles. How many gallons for 200 miles?',
-  },
-  {
-    icon: '🍕',
-    text: 'Pizza sharing problem',
-    prompt: 'A recipe makes 12 cookies with 3 cups of flour. How much flour for 30 cookies?',
+    text: 'Driving distance problem',
+    prompt: "Let's look at a problem about driving distances. Emma's family drives at a constant speed. After 3 hours, they've traveled 15 miles, and after 6 hours, they've traveled 30 miles. How far will they travel in 9 hours?",
   },
 ];
 
