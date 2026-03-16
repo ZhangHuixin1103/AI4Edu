@@ -58,7 +58,7 @@ const languageModels = {
     }),
     model: google("gemini-1.5-pro"),
   }),
-  "Llama-3.1-Math": vllmProvider("Qwen3-32B-SFT"),
+  "Llama-3.1-Math": vllmProvider("Qwen3-8B-GPT4"),
   'title-model': deepinfra("Qwen/Qwen2.5-72B-Instruct"),
   'artifact-model': deepinfra("meta-llama/Llama-3.3-70B-Instruct-Turbo"),
 };
