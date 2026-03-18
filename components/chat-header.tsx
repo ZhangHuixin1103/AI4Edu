@@ -3,11 +3,10 @@
 import { SidebarToggle } from '@/components/sidebar-toggle';
 import { Button } from '@/components/ui/button';
 import type { Session } from 'next-auth';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { memo } from 'react';
 import { useWindowSize } from 'usehooks-ts';
-import { GitIcon, PlusIcon } from './icons';
+import { PlusIcon } from './icons';
 import { useSidebar } from './ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
@@ -50,18 +49,6 @@ function PureChatHeader({
         </Tooltip>
       )}
 
-      <Button
-        className="bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-zinc-50 dark:text-zinc-900 hidden md:flex py-1.5 px-2 h-fit md:h-[34px] order-4 md:ml-auto"
-        asChild
-      >
-        <Link
-          href={`https://github.com/ZhangHuixin1103/AI4Edu`}
-          target="_noblank"
-        >
-          <GitIcon />
-          GitHub
-        </Link>
-      </Button>
     </header>
   );
 }
