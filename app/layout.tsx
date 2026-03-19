@@ -8,7 +8,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ai-math-ta.vercel.app'),
-  title: 'Your math TA',
+  title: 'Your math student Alex',
   description:
     'Howdy! Welcome to the starter page of our AI for Education project.',
 };
