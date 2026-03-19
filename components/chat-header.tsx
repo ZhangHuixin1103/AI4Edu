@@ -6,7 +6,8 @@ import type { Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
 import { memo } from 'react';
 import { useWindowSize } from 'usehooks-ts';
-import { PlusIcon } from './icons';
+import { PlusIcon, ShareIcon } from './icons';
+import { toast } from './toast';
 import { useSidebar } from './ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
@@ -25,6 +26,12 @@ function PureChatHeader({
   const { open } = useSidebar();
 
   const { width: windowWidth } = useWindowSize();
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/chat/${chatId}`;
+    navigator.clipboard.writeText(url);
+    toast({ type: 'success', description: 'Link copied to clipboard!' });
+  };
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
@@ -46,6 +53,21 @@ function PureChatHeader({
             </Button>
           </TooltipTrigger>
           <TooltipContent>New Chat</TooltipContent>
+        </Tooltip>
+      )}
+
+      {!isReadonly && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              className="md:px-2 px-2 md:h-fit ml-auto"
+              onClick={handleShare}
+            >
+              <ShareIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Copy share link</TooltipContent>
         </Tooltip>
       )}
 
