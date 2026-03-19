@@ -3,8 +3,10 @@ import Link from 'next/link';
 import { memo } from 'react';
 import {
   MoreHorizontalIcon,
+  ShareIcon,
   TrashIcon,
 } from './icons';
+import { toast } from './toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +50,17 @@ const PureChatItem = ({
         </DropdownMenuTrigger>
 
         <DropdownMenuContent side="bottom" align="end">
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => {
+              const url = `${window.location.origin}/chat/${chat.id}`;
+              navigator.clipboard.writeText(url);
+              toast({ type: 'success', description: 'Link copied to clipboard!' });
+            }}
+          >
+            <ShareIcon />
+            <span>Share</span>
+          </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer text-destructive focus:bg-destructive/15 focus:text-destructive dark:text-red-500"
             onSelect={() => onDelete(chat.id)}
