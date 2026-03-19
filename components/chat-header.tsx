@@ -1,28 +1,24 @@
 'use client';
 
-import { ModelSelector } from '@/components/model-selector';
 import { SidebarToggle } from '@/components/sidebar-toggle';
 import { Button } from '@/components/ui/button';
 import type { Session } from 'next-auth';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { memo } from 'react';
 import { useWindowSize } from 'usehooks-ts';
-import { GitIcon, PlusIcon } from './icons';
+import { PlusIcon, ShareIcon } from './icons';
+import { toast } from './toast';
 import { useSidebar } from './ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { type VisibilityType, VisibilitySelector } from './visibility-selector';
 
 function PureChatHeader({
   chatId,
   selectedModelId,
-  selectedVisibilityType,
   isReadonly,
   session,
 }: {
   chatId: string;
   selectedModelId: string;
-  selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
   session: Session;
 }) {
@@ -30,6 +26,12 @@ function PureChatHeader({
   const { open } = useSidebar();
 
   const { width: windowWidth } = useWindowSize();
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/chat/${chatId}`;
+    navigator.clipboard.writeText(url);
+    toast({ type: 'success', description: 'Link copied to clipboard!' });
+  };
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
@@ -55,33 +57,20 @@ function PureChatHeader({
       )}
 
       {!isReadonly && (
-        <ModelSelector
-          session={session}
-          selectedModelId={selectedModelId}
-          className="order-1 md:order-2"
-        />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              className="md:px-2 px-2 md:h-fit ml-auto"
+              onClick={handleShare}
+            >
+              <ShareIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Copy share link</TooltipContent>
+        </Tooltip>
       )}
 
-      {!isReadonly && (
-        <VisibilitySelector
-          chatId={chatId}
-          selectedVisibilityType={selectedVisibilityType}
-          className="order-1 md:order-3"
-        />
-      )}
-
-      <Button
-        className="bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-zinc-50 dark:text-zinc-900 hidden md:flex py-1.5 px-2 h-fit md:h-[34px] order-4 md:ml-auto"
-        asChild
-      >
-        <Link
-          href={`https://github.com/ZhangHuixin1103/AI4Edu`}
-          target="_noblank"
-        >
-          <GitIcon />
-          GitHub
-        </Link>
-      </Button>
     </header>
   );
 }
