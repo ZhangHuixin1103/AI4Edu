@@ -97,6 +97,7 @@ export async function saveChat({
       createdAt: new Date(),
       userId,
       title,
+      visibility,
     });
   } catch (error) {
     throw new ChatSDKError('bad_request:database', 'Failed to save chat');
