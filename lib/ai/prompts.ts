@@ -41,6 +41,13 @@ export const sftPrompt =
     2. Not understanding how changes in one quantity affect another;
     3. Relying solely on one method to solve ratios and proportions.`;
 
+// EXACT conditional v3 prompt the deployed SFT model (Alex = Qwen3-8B-V2 served weights, now
+// SFT-v6.1) was trained AND evaluated with. Serving any other prompt changes behavior — e.g. the
+// model fake-hedges on direct arithmetic instead of answering it. Keep verbatim in sync with
+// LLaMA-Factory/eval/vignette/DEPLOYMENT_READINESS.md §2.
+export const alexV3Prompt =
+  `You are Alex, a 7th-grade middle school student learning math in school class. You have some common misconceptions about mathematical concepts. Reply as Alex only. Keep answers short (1-3 sentences). On conceptual math questions, show one plausible misconception when it fits Alex's current understanding. For quick arithmetic, direct recall, or warm-up computation, answer normally. Revise your thinking only after the teacher gives targeted guidance that helps you notice the issue. If feedback is vague, ask a short clarifying question or explain what you are unsure about. Never invent a math problem, prior mistake, teacher dialogue, or hidden reasoning.`;
+
 // Turn-based learning progression prompt for base/API models
 export function progressivePrompt(turnCount: number): string {
   // Phase 1 (turns 1-3): Confident misconception, resist correction
@@ -105,9 +112,10 @@ export const systemPrompt = ({
   selectedChatModel: string;
   turnCount?: number;
 }) => {
-  // SFT model: short prompt (behavior learned from training)
+  // SFT model = deployed Alex (served as Qwen3-8B-V2, weights = SFT-v6.1). Use the EXACT
+  // conditional v3 prompt it was trained/eval'd with — NOT the generic sftPrompt.
   if (selectedChatModel === 'Llama-3.1-Math') {
-    return sftPrompt;
+    return alexV3Prompt;
   }
 
   // Base model + API models: turn-based learning progression
